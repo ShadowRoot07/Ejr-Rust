@@ -44,7 +44,7 @@ jobs:
           
           # Entrar al proyecto, compilarlo en modo silencioso para no saturar la consola y correrlo
           cd "$project"
-          cargo run --q --release
+          cargo run -q --release
           cd - > /dev/null
         done
         
