@@ -1,0 +1,60 @@
+name: Neon Ataraxia - Evaluador de Ejercicios
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  execute-rust:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 1. Clonar el repositorio
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 2 # Necesario para comparar el último commit y ver qué carpetas cambiaron
+
+    - name: 2. Instalar el Toolchain de Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: 3. Detectar y Ejecutar Ejercicio Modificado
+      run: |
+        echo "========================================================"
+        echo "    BUSCANDO PROYECTOS CARGO MODIFICADOS...              "
+        echo "========================================================"
+        
+        # Obtener la lista de archivos que cambiaron en el último push
+        CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+        
+        # Encontrar los directorios únicos que contienen un Cargo.toml de los archivos modificados
+        CHANGED_PROJECTS=$(echo "$CHANGED_FILES" | grep 'Cargo.toml' | xargs -I {} dirname {} | sort -u)
+        
+        # Si no se detectó un Cargo.toml directamente, buscar si se modificó un archivo dentro de una subcarpeta src
+        if [ -z "$CHANGED_PROJECTS" ]; then
+          CHANGED_PROJECTS=$(echo "$CHANGED_FILES" | grep '/src/' | cut -d'/' -f1 | sort -u)
+        fi
+
+        if [ -z "$CHANGED_PROJECTS" ] || [ "$CHANGED_PROJECTS" = "." ]; then
+          echo "⚠️ No se detectaron cambios en carpetas de ejercicios Cargo específicos."
+          echo "Ejecutando todos los proyectos encontrados en el repositorio por seguridad:"
+          CHANGED_PROJECTS=$(find . -name "Cargo.toml" -not -path "*/target/*" | xargs -I {} dirname {} | sort -u)
+        fi
+
+        # Iterar y ejecutar cada proyecto detectado
+        for project in $CHANGED_PROJECTS; do
+          if [ -f "$project/Cargo.toml" ]; then
+            echo ""
+            echo "========================================================"
+            echo " RUNNING EJERCICIO: $project"
+            echo "========================================================"
+            cd "$project"
+            
+            # Compilar y ejecutar mostrando la salida en consola
+            cargo run --release
+            
+            cd - > /dev/null
+          fi
+        done
+
