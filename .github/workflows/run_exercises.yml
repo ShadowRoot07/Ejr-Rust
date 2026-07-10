@@ -1,4 +1,4 @@
-name: Neon Ataraxia - Evaluador de Ejercicios
+name: Neon Ataraxia - Evaluador de Ejercicios Nativos
 
 on:
   push:
@@ -17,38 +17,41 @@ jobs:
     - name: 2. Instalar el Toolchain de Rust
       uses: dtolnay/rust-toolchain@stable
 
-    - name: 3. Escanear y Ejecutar Todos los Ejercicios
+    - name: 3. Buscar y Compilar todos los main.rs
       run: |
         echo "========================================================"
-        echo "    INICIANDO ESCANEO DE PROYECTOS RUST...             "
+        echo "    INICIANDO ESCANEO DE ARCHIVOS RUST (rustc)...       "
         echo "========================================================"
         
-        # Encontrar de forma infalible todos los directorios que contienen un Cargo.toml
-        # Excluyendo la carpeta interna de target si existiera por error
-        ALL_PROJECTS=$(find . -name "Cargo.toml" -not -path "*/target/*" | xargs -I {} dirname {} | sort -u)
+        # Buscar de forma infalible todos los archivos main.rs en el repo
+        ALL_MAINS=$(find . -name "main.rs" | sort)
 
-        if [ -z "$ALL_PROJECTS" ]; then
-          echo "❌ No se encontró ningún proyecto con Cargo.toml en el repositorio."
+        if [ -z "$ALL_MAINS" ]; then
+          echo "❌ No se encontró ningún archivo 'main.rs' en el repositorio."
           exit 1
         fi
 
-        # Iterar secuencialmente sobre cada proyecto encontrado
-        for project in $ALL_PROJECTS; do
-          # Limpiar el './' inicial de la ruta para que se vea estético en la consola
-          PROJECT_NAME=$(echo "$project" | sed 's|^\./||')
+        # Iterar sobre cada archivo main.rs encontrado
+        for main_file in $ALL_MAINS; do
+          # Obtener el nombre de la carpeta padre (ej. hello-edit o variables)
+          PROJECT_NAME=$(basename $(dirname $(dirname "$main_file")))
           
           echo ""
           echo "========================================================"
-          echo " ▶️ EJECUTANDO: $PROJECT_NAME"
+          echo " ▶️ EJECUTANDO EJERCICIO: $PROJECT_NAME"
           echo "========================================================"
           
-          # Entrar al proyecto, compilarlo en modo silencioso para no saturar la consola y correrlo
-          cd "$project"
-          cargo run -q --release
-          cd - > /dev/null
+          # Compilar el archivo directamente generando un binario temporal llamado 'ejercicio_ejecutable'
+          rustc "$main_file" -o ejercicio_ejecutable
+          
+          # Ejecutar el binario generado
+          ./ejercicio_ejecutable
+          
+          # Limpiar el binario para que no estorbe
+          rm ejercicio_ejecutable
         done
         
         echo ""
         echo "========================================================"
-        echo " ✅ TODOS LOS EJERCICIOS SE EJECUTARON CORRECTAMENTE    "
+        echo " ✅ TODOS LOS SCRIPTS SE EVALUARON CON ÉXITO            "
         echo "========================================================"
