@@ -63,7 +63,7 @@ fn main() {
     // Valores escaladores unicode
     //=======================
     let astr: &str = "Hola";
-    let ac: char = "i";
+    let ac: char = 'i';
 
     println!("==============================");
     println!("Mostrando valores escaladores: ");
