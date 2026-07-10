@@ -1,9 +1,7 @@
-name: Rust CI
+name: Rust CI Automatizado
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
     branches: [ main ]
 
 jobs:
@@ -15,6 +13,13 @@ jobs:
 
       - name: Instalar Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Inicializar proyecto si no existe
+        run: |
+          if [ ! -f "Cargo.toml" ]; then
+            echo "Cargo.toml no encontrado, creando proyecto..."
+            cargo init
+          fi
 
       - name: Compilar y Ejecutar
         run: cargo run
